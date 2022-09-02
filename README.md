@@ -1,4 +1,4 @@
-# collectl
+# Portworx debug tool for OCP based on collectl
 A robust perl application that collects ongoing performance data from various subsystems for playback and analysis.
 
 This utility can be deployed to your [Red Hat OpenShift Container Platform 4](https://www.redhat.com/en/openshift-4) cluster to gather in-depth per-node performance metrics.
