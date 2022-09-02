@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: portworx-debug
+  labels:
+    app: portworx-debug
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: portworx-debug
+  namespace: portworx-debug
+  labels:
+    app: portworx-debug
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: portworx-debug
+  namespace: portworx-debug
+  labels:
+    app: portworx-debug
+allowHostDirVolumePlugin: true
+allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+- '*'
+allowedUnsafeSysctls:
+- '*'
+fsGroup:
+  type: RunAsAny
+users:
+  - system:serviceaccount:portworx-debug:portworx-debug
+readOnlyRootFilesystem: false
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+- '*'
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: collectl
+  namespace: portworx-debug
+  labels:
+    app: portworx-debug
+spec:
+  selector:
+    matchLabels:
+      app: portworx-debug
+  template:
+    metadata:
+      labels:
+        app: portworx-debug
+    spec:
+      # these toleration are to have the daemonset runnable on control plane nodes
+      # Uncomment them if you want control plane nodes to run DS pods
+      #tolerations:
+      #- key: node-role.kubernetes.io/master
+      #  operator: Exists
+      #  effect: NoSchedule
+      nodeSelector:
+        portworx-debug: "true"
+      containers:
+      - name: portworx-debug
+        image: calvarado2004/px-collectl:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 400Mi
+          requests:
+            cpu: 100m
+            memory: 400Mi
+        volumeMounts:
+        - mountPath: /dev/mem
+          name: mem
+        - mountPath: /sys
+          name: sys
+        - mountPath: /var/log
+          name: logs
+        securityContext:
+          runAsUser: 0
+          privileged: true
+      volumes:
+      - name: mem
+        hostPath:
+          path: /dev/mem
+          type: CharDevice
+      - name: sys
+        hostPath:
+          path: /sys
+          type: Directory
+      - name: logs
+        hostPath:
+          path: /var/log
+          type: Directory
+      hostPID: true
+      hostNetwork: true
+      hostIPC: true
+      serviceAccount: portworx-debug
+      serviceAccountName: portworx-debug
